@@ -1,0 +1,172 @@
+/* ================= Wealth & Retirement Styles ================= */
+#wealth {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow-y: auto;
+    background: #e9c4a8;
+    padding-bottom: 60px; /* 留出底部導航欄空間 */
+}
+
+#wealth.active {
+    display: flex !important;
+    flex-direction: column;
+    z-index: 10; /* 確保啟用的分頁在最上層 */
+}
+
+.wealth-hero-card {
+    background: linear-gradient(135deg, #d49b72, #e9c4a8);
+    color: white;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.wealth-hero-label {
+    font-size: 16px;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.wealth-hero-total {
+    font-size: 36px;
+    font-weight: bold;
+    margin: 16px 0;
+}
+
+.wealth-update-time {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-bottom: 16px;
+}
+
+.fetch-price-btn {
+    background: white;
+    color: #d49b72;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fetch-price-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.asset-group {
+    margin-bottom: 20px;
+}
+
+.asset-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.asset-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.asset-input-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.unit-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.unit-box input {
+    width: 60px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: right;
+}
+
+.asset-config-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.asset-config-row span {
+    font-weight: 500;
+    color: #555;
+}
+
+/* 退休與被動收入試算看板樣式 */
+.retirement-hero-card {
+    background: linear-gradient(135deg, #7986cb, #5c6bc0);
+    color: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.retirement-hero-card h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.retirement-grid {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 16px;
+}
+
+.ret-item {
+    text-align: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    min-width: 140px;
+}
+
+.ret-item span {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.ret-item b {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.ret-tip {
+    font-size: 14px;
+    text-align: center;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    margin-top: 12px;
+}

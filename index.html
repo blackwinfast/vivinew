@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>薇薇 AI 秘書 - 首頁</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/finance.css">
+    <link rel="stylesheet" href="css/wealth.css">
+    <link rel="stylesheet" href="css/bike.css">
+    <link rel="stylesheet" href="css/calendar.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- 首頁 -->
+    <div id="home" class="page active home">
+        <div class="settings-button" onclick="showSettings()">⚙️</div>
+        <div class="photo" id="userPhoto">📷 你的照片位置</div>
+        
+        <div class="home-message-card">
+            <div class="message-text" id="lastMessage">微微：你好，我是秘書，很高興為您服務。</div>
+            <div class="message-time" id="lastTime">10:30</div>
+        </div>
+
+        <div class="input-box">
+            <input type="text" placeholder="對薇薇說..." id="userInput">
+            <button onclick="sendMessage()">發送</button>
+        </div>
+    </div>
+
+    <!-- 聊天頁面 -->
+    <div id="chat" class="page">
+        <div class="content">
+            <h2>聊聊</h2>
+            <div class="chat-container" id="chatContainer"></div>
+            <div class="input-box">
+                <input type="text" placeholder="對薇薇說..." id="chatUserInput">
+                <button onclick="sendChatMessage()">發送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 財務與即時對帳頁面 -->
+    <div id="money" class="page">
+        <div class="content">
+            <h2>即時財務對帳</h2>
+
+            <!-- 多帳本分頁切換列 -->
+            <div id="ledgerTabsBar" class="ledger-tabs-bar"></div>
+
+            <div class="finance-nav-pills">
+                <button type="button" class="pill-btn chart-pill" onclick="openStatsPage()">📊 收支統計圖表</button>
+                <button type="button" class="pill-btn wealth-pill" onclick="openWealthPage()">💎 總財產與市價</button>
+            </div>
+
+            <div class="summary-bar">
+                <div class="summary-box">
+                    <span class="summary-label">上次盤點總資金</span>
+                    <span class="summary-val" id="prevTotalDisplay">NT$ 0</span>
+                </div>
+                <div class="summary-box">
+                    <span class="summary-label">今日收入 / 開銷</span>
+                    <span class="summary-val">
+                        <span style="color:#4CAF50;" id="todayTipDisplay">+0</span> / 
+                        <span style="color:#e53935;" id="todayExpDisplay">-0</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="finance-split-layout">
+                <div class="card audit-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                        <h3 style="margin: 0; border: none; padding: 0;" id="currentLedgerTitleDisplay">💰 總資金</h3>
+                        <div style="display: flex; gap: 6px;">
+                            <button onclick="manageCurrentLedger()" title="管理或刪除此帳本" style="background: #fff; border: 1px solid #e9c4a8; border-radius: 8px; padding: 6px 8px; font-size: 11px; font-weight: bold; cursor: pointer;">⚙️ 帳本設定</button>
+                            <button onclick="manageCustomAccounts()" style="background: #fff; border: 1px solid #e9c4a8; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: bold; cursor: pointer;">⚙️ 管理資產帳戶</button>
+                        </div>
+                    </div>
+
+                    <!-- 動態渲染的自訂帳戶輸入清單 -->
+                    <div id="dynamicAccountsContainer"></div>
+
+                    <div class="total-balance">
+                        <div class="balance-label">目前盤點總計</div>
+                        <div class="balance-value total" id="currentTotalDisplay">NT$ 0</div>
+                    </div>
+
+                    <button class="audit-btn" onclick="checkReconciliation()">開始比對並結算</button>
+
+                    <div id="diffActionBox" class="diff-box" style="display: none;">
+                        <div id="diffAlertText" class="diff-alert"></div>
+                        
+                        <!-- 動態收入標籤區 -->
+                        <div id="incomeTags" class="quick-tags" style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;"></div>
+
+                        <!-- 動態支出標籤區 -->
+                        <div id="expenseTags" class="quick-tags" style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;"></div>
+
+                        <input type="text" id="diffReasonInput" class="reason-input" placeholder="請點選上方標籤或自行輸入原因...">
+                        <div class="diff-btn-group">
+                            <button class="cancel-diff-btn" onclick="cancelReconciliation()">重新點算</button>
+                            <button class="confirm-diff-btn" onclick="confirmReconciliation()">確認寫入流水</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card history-card">
+                    <div class="transaction-header">
+                        <h3>📝 今日帳目流水</h3>
+                        <button type="button" class="view-all-btn" onclick="openHistoryPage()">🔍 查全部 / 篩選 ›</button>
+                    </div>
+                    <div id="transactionList" class="transaction-scroll-box"></div>
+                </div>
+            </div>
+
+            <!-- 💳 信用卡與帳單管理卡片 -->
+            <div class="card" style="margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0; border: none; padding: 0;">💳 信用卡與待繳帳單</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="addCreditTransaction()" style="background: #e9c4a8; border: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: bold; cursor: pointer;">＋ 刷卡記帳</button>
+                        <button onclick="addCreditCard()" style="background: #fff; border: 1px solid #e9c4a8; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: bold; cursor: pointer;">⚙️ 新增卡片</button>
+                    </div>
+                </div>
+                <div id="creditCardContainer"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 機車管理頁面 -->
+    <div id="bike" class="page">
+        <div class="content">
+            <div style="margin-bottom: 15px;">
+                <h2 style="margin: 0;">🏍️ 愛車與維護管理</h2>
+            </div>
+
+            <div class="bike-info card" style="position: relative;">
+                <button type="button" onclick="toggleEditBike()" style="position: absolute; top: 15px; right: 15px; padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; z-index: 2;">⚙️ 編輯車輛資訊</button>
+
+                <div class="bike-header" style="display: flex; align-items: center; gap: 15px;">
+                    <div class="bike-photo-container" onclick="document.getElementById('bikePhotoUpload').click()" style="width: 70px; height: 70px; border-radius: 50%; background: #f0f0f0; border: 2px dashed #d49b72; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; flex-shrink: 0; position: relative;" title="點擊拍照或上傳愛車照片">
+                        <img id="displayBikePhotoImg" src="" alt="愛車照片" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <div id="displayBikeEmoji" style="font-size: 36px;">🛵</div>
+                        <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.5); color: white; font-size: 9px; text-align: center; padding: 1px 0;">更換</div>
+                    </div>
+                    <input type="file" id="bikePhotoUpload" accept="image/*" capture="environment" style="display: none;" onchange="uploadBikePhoto(event)">
+
+                    <div class="bike-details" style="flex: 1; padding-right: 115px;">
+                        <h3 id="displayBikeName" style="margin: 0 0 6px 0; color: #333;">我的愛車</h3>
+                        <p id="displayBikeModel" style="margin: 0 0 3px 0; color: #555; font-size: 14px;">型號：Yamaha NMAX 155</p>
+                        <p id="displayBikePlate" style="margin: 0 0 3px 0; color: #555; font-size: 14px;">車牌號碼：ABC-1234</p>
+                        <p id="displayBikeMileage" style="margin: 0; color: #2e7d32; font-size: 14px; font-weight: bold;">目前里程：1,000 km</p>
+                    </div>
+                </div>
+
+                <div id="bikeEditForm" class="bike-edit-form">
+                    <h4 style="margin: 0 0 10px 0; color: #333;">編輯愛車與車牌車型</h4>
+                    <div class="form-row">
+                        <label>愛車暱稱 / 標題</label>
+                        <input type="text" id="inputBikeName" placeholder="例如：我的愛車">
+                    </div>
+                    <div class="form-row">
+                        <label>車型名稱 (例如：Yamaha NMAX 155)</label>
+                        <input type="text" id="inputBikeModel" placeholder="輸入您的車型">
+                    </div>
+                    <div class="form-row">
+                        <label>車牌號碼 (例如：ABC-1234)</label>
+                        <input type="text" id="inputBikePlate" placeholder="輸入您的車牌">
+                    </div>
+                    <div class="form-row">
+                        <label>目前里程 (km)</label>
+                        <input type="number" id="inputBikeMileage" placeholder="輸入目前總里程">
+                    </div>
+                    <div class="action-btn-group">
+                        <button type="button" class="btn-primary" onclick="saveBikeInfo()">儲存車輛資訊</button>
+                        <button type="button" class="btn-secondary" onclick="toggleEditBike()">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">📌 下次保養 / 待辦事項</h3>
+                    <button type="button" onclick="toggleAddMaintenance()" style="padding: 6px 12px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">＋ 新增待辦保養</button>
+                </div>
+
+                <div id="addMaintenanceForm" class="add-form">
+                    <h4 style="margin: 0 0 10px 0; color: #333;">新增待辦保養項目</h4>
+                    <div class="form-row">
+                        <label>保養項目標題</label>
+                        <input type="text" id="maintTitle" placeholder="例如：定期保養（更換機油）">
+                    </div>
+                    <div class="form-row">
+                        <label>預定日期</label>
+                        <input type="date" id="maintDate">
+                    </div>
+                    <div class="form-row">
+                        <label>預計下次更換目標里程 (km)</label>
+                        <input type="number" id="maintTargetKm" placeholder="例如：3500">
+                    </div>
+                    <div class="form-row">
+                        <label>詳細說明</label>
+                        <textarea id="maintDesc" rows="2" placeholder="例如：更換機油、齒輪油"></textarea>
+                    </div>
+                    <div class="action-btn-group">
+                        <button type="button" class="btn-primary" onclick="addUpcomingMaintenance()">確認新增</button>
+                        <button type="button" class="btn-secondary" onclick="toggleAddMaintenance()">取消</button>
+                    </div>
+                </div>
+
+                <div id="upcomingList"></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">📜 歷史保養記錄（含花費與里程）</h3>
+                    <button type="button" onclick="clearHistory()" style="background: transparent; border: none; color: #e53935; cursor: pointer; font-size: 12px;">清空記錄</button>
+                </div>
+
+                <div style="background: #e8f5e9; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #c8e6c9;">
+                    <h4 style="margin: 0 0 8px 0; color: #2e7d32; font-size: 14px;">⚡ 快速記錄今日換機油 / 保養</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <input type="text" id="quickTitle" placeholder="項目 (例: 換機油)" value="更換機油" style="padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                        <input type="number" id="quickCost" placeholder="車行報價/花費 (NT$)" style="padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <input type="number" id="quickKm" placeholder="當時公里數 (km)" style="padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                        <input type="number" id="quickNextKm" placeholder="下次保養里程 (km)" style="padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
+                    </div>
+                    <button type="button" onclick="quickAddHistory()" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 6px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">＋ 寫入保養記錄並更新愛車里程</button>
+                </div>
+
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📁 其他選單頁面（主選單：包含行事曆、鬧鐘與倒數計時） -->
+    <div id="others" class="page">
+        <div class="content">
+            <h2 style="margin-bottom: 15px; color: #202124;">📁 其他工具與行事曆</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                <div class="card" onclick="openOtherSubPage('calendar')" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 18px; border: 1.5px solid #dadce0; border-radius: 12px; transition: all 0.2s; background: #fff;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='#fff'">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="font-size: 32px;">📅</span>
+                        <div>
+                            <h3 style="margin: 0 0 4px 0; color: #202124; font-size: 16px;">行事曆與行程管理</h3>
+                            <p style="margin: 0; color: #5f6368; font-size: 13px;">查看月份行程、農曆、新增事件與匯入 .ics 檔</p>
+                        </div>
+                    </div>
+                    <span style="font-size: 20px; color: #5f6368;">›</span>
+                </div>
+
+                <div class="card" onclick="openOtherSubPage('alarm')" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 18px; border: 1.5px solid #dadce0; border-radius: 12px; transition: all 0.2s; background: #fff;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='#fff'">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="font-size: 32px;">⏰</span>
+                        <div>
+                            <h3 style="margin: 0 0 4px 0; color: #202124; font-size: 16px;">鬧鐘與倒數計時器</h3>
+                            <p style="margin: 0; color: #5f6368; font-size: 13px;">設定多組定時鬧鐘、倒數計時與響鈴提示</p>
+                        </div>
+                    </div>
+                    <span style="font-size: 20px; color: #5f6368;">›</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📅 行事曆子頁面 -->
+    <div id="sub_calendar" class="page">
+        <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <button type="button" onclick="showPage('others')" style="padding: 6px 12px; background: #f1f3f4; color: #3c4043; border: 1px solid #dadce0; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">‹ 返回其他</button>
+                <div style="display: flex; gap: 6px;">
+                    <input type="file" id="icsFileInput" accept=".ics" style="display: none;" onchange="importIcsFile(event)">
+                    <button type="button" onclick="document.getElementById('icsFileInput').click()" style="padding: 6px 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">📥 匯入 .ics</button>
+                </div>
+            </div>
+            
+            <div class="calendar-container" style="background: #ffffff; border: 1px solid #dadce0; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 15px;">
+                <div class="calendar-header" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div id="currentMonth" style="font-size: 18px; font-weight: 500; color: #3c4043;">2026年6月</div>
+                    <div style="display: flex; gap: 5px;">
+                        <button id="prevMonth" style="background: #f1f3f4; border: 1px solid #dadce0; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px;">‹</button>
+                        <button id="nextMonth" style="background: #f1f3f4; border: 1px solid #dadce0; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px;">›</button>
+                    </div>
+                </div>
+                <div class="calendar-grid" id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #dadce0; border: 1px solid #dadce0;"></div>
+            </div>
+
+            <div class="card" id="dayDetailCard" style="border: 1px solid #dadce0; border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 id="selectedDateTitle" style="margin: 0; font-size: 15px; color: #3c4043;">📌 當日行程與農曆</h3>
+                    <button type="button" onclick="openAddEventModal()" style="padding: 6px 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">＋ 新增行程</button>
+                </div>
+                <div id="dayEventList">
+                    <div style="text-align: center; color: #888; padding: 15px 0; font-size: 13px;">請點選上方日期查看詳細資訊與行程</div>
+                </div>
+            </div>
+
+            <div id="addEventFormBox" class="card" style="display: none; background: #f8f9fa; border: 1.5px solid #1a73e8;">
+                <h4 style="margin: 0 0 10px 0; color: #202124;" id="formTitleDate">新增行程</h4>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; color: #5f6368; display: block; margin-bottom: 4px;">行程標題</label>
+                    <input type="text" id="eventTitleInput" placeholder="例如：開會、繳保費" style="width: 100%; padding: 8px 12px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none;">
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; color: #5f6368; display: block; margin-bottom: 4px;">備註說明</label>
+                    <textarea id="eventDescInput" rows="2" placeholder="詳細內容或地點..." style="width: 100%; padding: 8px 12px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none;"></textarea>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" onclick="saveNewEvent()" style="flex: 2; background: #1a73e8; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">確認儲存</button>
+                    <button type="button" onclick="closeAddEventModal()" style="flex: 1; background: #f1f3f4; color: #3c4043; border: 1px solid #dadce0; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px;">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⏰ 鬧鐘與計時器子頁面 -->
+    <div id="sub_alarm" class="page">
+        <div class="content">
+            <div style="margin-bottom: 12px;">
+                <button type="button" onclick="showPage('others')" style="padding: 6px 12px; background: #f1f3f4; color: #3c4043; border: 1px solid #dadce0; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">‹ 返回其他</button>
+            </div>
+            <div id="alarmModuleContainer"></div>
+        </div>
+    </div>
+
+    <!-- 歷史流水查詢頁面 -->
+    <div id="history" class="page">
+        <div class="content">
+            <div class="history-page-header">
+                <button type="button" class="back-btn" onclick="showPage('money')">‹ 返回對帳</button>
+                <h2>歷史流水查詢</h2>
+            </div>
+            <div class="card filter-card">
+                <div class="search-bar-box">
+                    <span>🔍</span>
+                    <input type="text" id="historySearchInput" placeholder="搜尋項目..." oninput="filterHistoryTransactions()">
+                    <button type="button" class="clear-search-btn" onclick="clearHistoryFilter()">清除</button>
+                </div>
+                <div class="date-range-box">
+                    <div class="date-input-group">
+                        <label>開始日期</label>
+                        <input type="date" id="historyStartDate" onchange="filterHistoryTransactions()">
+                    </div>
+                    <span class="date-tilde">～</span>
+                    <div class="date-input-group">
+                        <label>結束日期</label>
+                        <input type="date" id="historyEndDate" onchange="filterHistoryTransactions()">
+                    </div>
+                </div>
+                <div class="history-summary-strip">
+                    <span>共 <b id="filteredCount">0</b> 筆</span>
+                    <span>收入 <b style="color:#4CAF50;" id="filteredIncome">+0</b></span>
+                    <span>支出 <b style="color:#e53935;" id="filteredExpense">-0</b></span>
+                </div>
+            </div>
+            <div class="card history-result-card">
+                <div id="historyFullList" class="history-full-scroll"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 收支統計分析頁面 -->
+    <div id="stats" class="page">
+        <div class="content">
+            <div class="history-page-header">
+                <button type="button" class="back-btn" onclick="showPage('money')">‹ 返回對帳</button>
+                <h2>收支統計分析</h2>
+            </div>
+            <div class="card">
+                <div class="stats-controls">
+                    <div class="filter-tabs">
+                        <button type="button" id="btnStatsMonth" class="active" onclick="setStatsPeriod('month')">每月統計</button>
+                        <button type="button" id="btnStatsYear" onclick="setStatsPeriod('year')">每年統計</button>
+                    </div>
+                    <input type="month" id="statsMonthPicker" class="period-picker" onchange="renderStatsCharts()">
+                    <select id="statsYearPicker" class="period-picker" style="display:none;" onchange="renderStatsCharts()"></select>
+                </div>
+                <div class="stats-kpi-grid">
+                    <div class="kpi-box"><span>總收入</span><b style="color:#4CAF50;" id="statsTotalInc">NT$ 0</b></div>
+                    <div class="kpi-box"><span>總支出</span><b style="color:#e53935;" id="statsTotalExp">NT$ 0</b></div>
+                    <div class="kpi-box"><span>淨結餘</span><b style="color:#333;" id="statsNet">NT$ 0</b></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>🍩 支出分類佔比</h3>
+                <div class="chart-wrapper"><canvas id="expensePieChart"></canvas></div>
+                <div id="categoryBreakdownList" class="category-list"></div>
+            </div>
+            <div class="card">
+                <h3>📈 收入與支出對比</h3>
+                <div class="chart-wrapper" style="height: 200px;"><canvas id="incExpBarChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 總財產與退休試算頁面 -->
+    <div id="wealth" class="page">
+        <div class="content">
+            <div class="history-page-header">
+                <button type="button" class="back-btn" onclick="showPage('money')">‹ 返回對帳</button>
+                <h2>總財產與退休被動收入試算</h2>
+            </div>
+            
+            <div class="card wealth-hero-card">
+                <div class="wealth-hero-label">今日總財產折合台幣（含現金與投資）</div>
+                <div class="wealth-hero-total" id="grandTotalWealth">NT$ 0</div>
+                <div class="wealth-update-time" id="priceUpdateTime">即時連動計算中</div>
+                <button type="button" class="fetch-price-btn" id="btnFetchPrices" onclick="fetchAllLatestPrices()">🔄 重新計算所有資產價值</button>
+            </div>
+
+            <!-- 退休目標與進度儀表板卡片 -->
+            <div class="card retirement-hero-card" style="background: #fdfaf6; border: 1.5px solid #e8d0c0; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0; color: #333;">🎯 退休目標與進度追蹤</h3>
+                    <button type="button" onclick="toggleRetirementEdit()" style="padding: 5px 12px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">⚙️ 設定目標與試算參數</button>
+                </div>
+
+                <div id="retirementEditForm" style="display: block; background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ddd;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                        <div>
+                            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">🎯 目標退休總資金 (NT$)</label>
+                            <input type="number" id="targetRetirementAmount" value="15000000" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box;" oninput="saveRetirementGoal()">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">📈 預期平均年領息率 (%)</label>
+                            <input type="number" step="0.1" id="targetRetirementYield" value="4.5" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box;" oninput="saveRetirementGoal()">
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px dashed #eee; padding-top: 8px; margin-top: 4px;">
+                        <div style="font-size: 12px; font-weight: bold; color: #555; margin-bottom: 6px;">📝 退休預估資金分項規劃（可手動輸入推估）：</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div>
+                                <label style="font-size: 11px; color: #777; display: block;">💵 現金定存規劃 (NT$)</label>
+                                <input type="number" id="planCashAmount" placeholder="0" style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box;" oninput="saveRetirementGoal()">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #777; display: block;">📈 股票 / ETF 規劃 (NT$)</label>
+                                <input type="number" id="planStockAmount" placeholder="0" style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box;" oninput="saveRetirementGoal()">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #777; display: block;">🛡️ 基金規劃 (NT$)</label>
+                                <input type="number" id="planFundAmount" placeholder="0" style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box;" oninput="saveRetirementGoal()">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #777; display: block;">📋 保險與儲蓄險規劃 (NT$)</label>
+                                <input type="number" id="planInsAmount" placeholder="0" style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box;" oninput="saveRetirementGoal()">
+                            </div>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 12px; color: #1a73e8; text-align: right;">
+                            上述四項規劃加總：<b id="plannedSubTotalDisplay">NT$ 0</b>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; color: #555; margin-bottom: 4px;">
+                        <span>目標達成進度</span>
+                        <span id="retirementProgressPercent" style="font-weight: bold; color: #2e7d32;">0.0%</span>
+                    </div>
+                    <div style="background: #e0e0e0; border-radius: 10px; height: 14px; overflow: hidden;">
+                        <div id="retirementProgressBar" style="background: #4CAF50; width: 0%; height: 100%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <div class="retirement-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; border-top: 1px dashed #e0e0e0; padding-top: 10px;">
+                    <div class="ret-item" style="background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                        <span style="font-size: 11px; color: #777; display: block;">推估退休後可領月息</span>
+                        <b id="retMonthlyIncome" style="font-size: 16px; color: #d93025;">NT$ 0 /月</b>
+                    </div>
+                    <div class="ret-item" style="background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                        <span style="font-size: 11px; color: #777; display: block;">推估退休後總年息</span>
+                        <b id="retAnnualIncome" style="font-size: 16px; color: #1a73e8;">NT$ 0 /年</b>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🥧 總財產比例分佈</h3>
+                <div class="chart-wrapper"><canvas id="wealthPieChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <h3>💵 現金與銀行存款</h3>
+                <div class="asset-group">
+                    <div class="asset-row">
+                        <span style="flex:1;">各資產帳戶加總 (自動連動對帳金額)</span>
+                        <div class="yield-config-box">
+                            <span>年利率</span>
+                            <input type="number" step="0.1" id="cashInterestRate" value="1.5" style="width:55px;" onchange="fetchAllLatestPrices()"><span>%</span>
+                            <span id="wealthCashVal" style="font-weight:bold; color:#2e7d32; min-width:80px; text-align:right;">NT$ 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">₿ 比特幣 / 加密貨幣清單</h3>
+                    <button type="button" onclick="addCryptoItem()" style="padding: 6px 12px; background: #f7931a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">＋ 新增加密貨幣</button>
+                </div>
+                <div id="cryptoListContainer"></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">📈 股票 / ETF 清單（台股/美股）</h3>
+                    <button type="button" onclick="addStockItem()" style="padding: 6px 12px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">＋ 新增股票</button>
+                </div>
+                <div id="stockListContainer"></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">🛡️ 基金投資清單</h3>
+                    <button type="button" onclick="addFundItem()" style="padding: 6px 12px; background: #3F51B5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">＋ 新增基金</button>
+                </div>
+                <div id="fundListContainer"></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">📋 保險與儲蓄險清單</h3>
+                    <button type="button" onclick="addInsuranceItem()" style="padding: 6px 12px; background: #FF5722; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">＋ 新增保單</button>
+                </div>
+                <div id="insuranceListContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部導覽列 -->
+    <div class="tabbar">
+        <button onclick="showPage('home')">🏠<br>首頁</button>
+        <button onclick="showPage('chat')">💬<br>聊聊</button>
+        <button onclick="showPage('money')">💰<br>財務</button>
+        <button onclick="showPage('bike')">🏍️<br>機車</button>
+        <button onclick="showPage('others')">📁<br>其他</button>
+    </div>
+
+<!-- 引入所有相關 JS 模組 -->
+    <script src="shared/storage.js"></script>
+    <script src="shared/keys.js"></script>
+
+    <!-- 🧠 正式啟用拆分後的記憶模組 -->
+    <script src="memory/memory-core.js"></script>
+    <script src="memory/memory-favorites.js"></script>
+    <script src="memory/memory-events.js"></script>
+    <script src="memory/memory-debug.js"></script>
+
+    <!-- 🧠 記憶管理 UI -->
+    <script src="memory/memory-ui.js"></script>
+
+    <script src="weather.js"></script>
+    <script src="gemini.js"></script>
+    <script src="chat.js"></script>
+    <script src="settings.js"></script>
+    <script src="finance.js"></script>
+    
+    <!-- 📊 正式啟用獨立的收支統計模組 -->
+    <script src="stats.js"></script>
+
+    <!-- 💎 正式啟用拆分後的財富與退休模組 -->
+    <script src="wealth-core.js"></script>
+    <script src="wealth-assets.js"></script>
+    <script src="wealth-retirement.js"></script>
+
+    <script src="calendar.js"></script>
+    <script src="alarm.js"></script>
+    <script src="bike.js"></script>
+    <script src="credit-card.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
